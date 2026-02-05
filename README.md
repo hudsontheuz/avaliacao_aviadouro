@@ -7,6 +7,7 @@ O projeto simula um módulo de controle de granjas para gestão de:
 - Cadastro de Lotes
 - Lançamento de Pesagens
 - Lançamento de Mortalidade
+- Consulta consolidada do lote
 - Indicador visual de saúde do lote (verde, amarelo e vermelho)
 
 ---
@@ -95,29 +96,62 @@ C:\Banco\AvaliacaoAviario.fdb
 
 ---
 
-# 📊 Regras de Negócio Implementadas
+# 📊 Funcionalidades do Sistema
 
-## 🐔 Lote
-- Cadastro com quantidade inicial.
+## 🐔 Cadastro de Lote (uLoteAves)
+- Cadastro de novos lotes com:
+  - Descrição
+  - Data de entrada
+  - Quantidade inicial de aves
 - O peso médio geral do lote é recalculado automaticamente via Stored Procedure,
   utilizando média ponderada baseada na quantidade pesada.
 
-## ⚖️ Pesagem
+---
+
+## ⚖️ Lançamento de Pesagem (uPesagem)
+- Seleção do lote via Lookup.
 - Validação de lote selecionado.
 - Validação de quantidade pesada (> 0).
 - Validação de peso médio (> 0).
 - Inserção realizada exclusivamente via Stored Procedure.
 - Recalculo automático do peso médio geral do lote.
+- Exibição das pesagens vinculadas ao lote selecionado.
 
-## 💀 Mortalidade
+---
+
+## 💀 Lançamento de Mortalidade (uMortalidade)
+- Seleção do lote via Lookup.
 - Inserção realizada via Stored Procedure.
 - Validação para impedir que a mortalidade acumulada ultrapasse a quantidade inicial do lote.
 - Cálculo automático do percentual acumulado de mortalidade.
 - Atualização dinâmica do indicador visual de saúde:
 
-  - Verde: menor que 5%
-  - Amarelo: entre 5% e 10%
-  - Vermelho: acima de 10%
+  - 🟢 Verde: menor que 5%
+  - 🟡 Amarelo: entre 5% e 10%
+  - 🔴 Vermelho: acima de 10%
+
+- Exibição das mortalidades vinculadas ao lote selecionado.
+
+---
+
+## 📈 Controle e Consulta Consolidada (uControleLotes)
+
+Tela responsável pela visualização consolidada de cada lote.
+
+Funcionalidades:
+
+- Seleção de lote via Lookup.
+- Exibição consolidada em grid contendo:
+  - ID do lote
+  - Descrição
+  - Quantidade inicial
+  - Total pesado
+  - Total de aves mortas
+  - Percentual de mortalidade
+
+A consulta utiliza agregações no banco de dados para apresentar os totais de forma correta e consistente, evitando duplicidade de somas.
+
+Essa tela permite uma visão gerencial do desempenho do lote.
 
 ---
 
