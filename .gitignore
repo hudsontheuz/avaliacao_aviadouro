@@ -1,0 +1,19 @@
+# Delphi
+Win32/
+Win64/
+__history/
+*.dcu
+*.local
+*.identcache
+*.stat
+*.map
+*.rsm
+*.tvsconfig
+*.dsk
+
+# Backup
+*.~*
+*.bak
+
+# Firebird database file
+*.fdb
