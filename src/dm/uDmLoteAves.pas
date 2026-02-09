@@ -27,8 +27,6 @@ type
     FDPhysFBDriverLink1: TFDPhysFBDriverLink;
     procedure DataModuleCreate(Sender: TObject);
   public
-    procedure CarregarPesagens(const AIdLote: Integer);
-    procedure CarregarMortalidades(const AIdLote: Integer);
   end;
 
 var
