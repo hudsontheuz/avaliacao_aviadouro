@@ -58,19 +58,5 @@ begin
   qryLoteAves.Open;
 end;
 
-procedure TdmLoteAves.CarregarPesagens(const AIdLote: Integer);
-begin
-  qryPesagem.Close;
-  qryPesagem.ParamByName('ID_LOTE').AsInteger := AIdLote;
-  qryPesagem.Open;
-end;
-
-procedure TdmLoteAves.CarregarMortalidades(const AIdLote: Integer);
-begin
-  qryMortalidade.Close;
-  qryMortalidade.ParamByName('ID_LOTE').AsInteger := AIdLote;
-  qryMortalidade.Open;
-end;
-
 end.
 
