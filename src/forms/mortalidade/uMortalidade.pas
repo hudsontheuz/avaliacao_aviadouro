@@ -39,8 +39,7 @@ type
     function LerQuantidadeMorta: Integer;
     function LerObservacao: string;
     procedure AtualizarIndicadorSaude(const PercentualMortalidade: Double);
-    procedure CarregarGridMortalidade;
-    function CalcularPercentualMortalidadeDoLote(const AIdLote: Integer): Double;
+    procedure CarregarGridMortalidade(const AIdLote: Integer);
   public
   end;
 
@@ -50,7 +49,7 @@ var
 implementation
 
 uses
-  uDmLoteAves, uMortalidadeDomain, FireDAC.Comp.Client;
+  uDmLoteAves, uMortalidadeDomain, bib, FireDAC.Stan.Param;
 
 {$R *.dfm}
 
@@ -75,11 +74,12 @@ begin
   pnlInidicador.Color := clBtnFace;
   pnlInidicador.Caption := '--';
 
-  CarregarGridMortalidade;
+  dmLoteAves.qryMortalidade.Close;
+
   LimparCampos;
 end;
 
-procedure TfrmMortalidade.CarregarGridMortalidade;
+procedure TfrmMortalidade.CarregarGridMortalidade(const AIdLote: Integer);
 begin
   dmLoteAves.qryMortalidade.Close;
   dmLoteAves.qryMortalidade.SQL.Text :=
@@ -90,7 +90,9 @@ begin
     '  QUANTIDADE_MORTA, ' +
     '  OBSERVACAO ' +
     'FROM TAB_MORTALIDADE ' +
-    'ORDER BY DATA_MORTALIDADE DESC';
+    'WHERE ID_LOTE_FK = :ID_LOTE ' +
+    'ORDER BY DATA_MORTALIDADE DESC, ID_MORTALIDADE DESC';
+  dmLoteAves.qryMortalidade.ParamByName('ID_LOTE').AsInteger := AIdLote;
   dmLoteAves.qryMortalidade.Open;
 end;
 
@@ -111,18 +113,33 @@ begin
     FIdLote := 0;
     pnlInidicador.Color := clBtnFace;
     pnlInidicador.Caption := '--';
+    dmLoteAves.qryMortalidade.Close;
     Exit;
   end;
 
   FIdLote := VarAsType(lkpLote.KeyValue, varInteger);
-  Perc := CalcularPercentualMortalidadeDoLote(FIdLote);
+  CarregarGridMortalidade(FIdLote);
+
+  dmLoteAves.spInserirMortalidade.Close;
+  dmLoteAves.spInserirMortalidade.Unprepare;
+  dmLoteAves.spInserirMortalidade.StoredProcName := 'PRCD_INSERIR_MORTALIDADE';
+  dmLoteAves.spInserirMortalidade.Prepare;
+
+  dmLoteAves.spInserirMortalidade.ParamByName('P_ID_LOTE').AsInteger := FIdLote;
+  dmLoteAves.spInserirMortalidade.ParamByName('P_DATA_MORTALIDADE').AsDate := Date;
+  dmLoteAves.spInserirMortalidade.ParamByName('P_QUANTIDADE_MORTA').AsInteger := 0;
+  dmLoteAves.spInserirMortalidade.ParamByName('P_OBSERVACAO').AsString := '';
+
+  dmLoteAves.spInserirMortalidade.Open;
+  Perc := dmLoteAves.spInserirMortalidade.FieldByName('P_PERCENTUAL').AsFloat;
+  dmLoteAves.spInserirMortalidade.Close;
+
   AtualizarIndicadorSaude(Perc);
 end;
 
 procedure TfrmMortalidade.ED_QUANTIDADEMORTAKeyPress(Sender: TObject; var Key: Char);
 begin
-  if not CharInSet(Key, ['0'..'9', #8]) then
-    Key := #0;
+  bib.SomenteNumeros(Key);
 end;
 
 function TfrmMortalidade.LerQuantidadeMorta: Integer;
@@ -156,42 +173,6 @@ begin
   pnlInidicador.Caption := FormatFloat('0.00', PercentualMortalidade) + '%';
 end;
 
-function TfrmMortalidade.CalcularPercentualMortalidadeDoLote(const AIdLote: Integer): Double;
-var
-  Qry: TFDQuery;
-  QtdInicial: Integer;
-  TotalMorta: Integer;
-begin
-  Result := 0;
-
-  Qry := TFDQuery.Create(nil);
-  try
-    Qry.Connection := dmLoteAves.conFirebird;
-
-    Qry.SQL.Text := 'SELECT QUANTIDADE_INICIAL FROM TAB_LOTE_AVES WHERE ID_LOTE = :ID_LOTE';
-    Qry.ParamByName('ID_LOTE').AsInteger := AIdLote;
-    Qry.Open;
-    if Qry.IsEmpty then
-      Exit;
-
-    QtdInicial := Qry.FieldByName('QUANTIDADE_INICIAL').AsInteger;
-    Qry.Close;
-
-    Qry.SQL.Text := 'SELECT COALESCE(SUM(QUANTIDADE_MORTA),0) AS TOTAL_MORTA FROM TAB_MORTALIDADE WHERE ID_LOTE_FK = :ID_LOTE';
-    Qry.ParamByName('ID_LOTE').AsInteger := AIdLote;
-    Qry.Open;
-
-    TotalMorta := Qry.FieldByName('TOTAL_MORTA').AsInteger;
-
-    if QtdInicial > 0 then
-      Result := (TotalMorta / QtdInicial) * 100
-    else
-      Result := 0;
-  finally
-    Qry.Free;
-  end;
-end;
-
 procedure TfrmMortalidade.btnSalvarMortalidadeClick(Sender: TObject);
 var
   Qtd: Integer;
@@ -199,8 +180,7 @@ var
   Perc: Double;
 begin
   try
-    if FIdLote <= 0 then
-      raise Exception.Create('Selecione um lote.');
+    bib.ValidarLoteSelecionado(FIdLote);
 
     Qtd := LerQuantidadeMorta;
 
@@ -209,23 +189,30 @@ begin
       Mort.Validar;
 
       dmLoteAves.spInserirMortalidade.Close;
+      dmLoteAves.spInserirMortalidade.Unprepare;
       dmLoteAves.spInserirMortalidade.StoredProcName := 'PRCD_INSERIR_MORTALIDADE';
-      dmLoteAves.spInserirMortalidade.Params.Clear;
+      dmLoteAves.spInserirMortalidade.Prepare;
 
-      dmLoteAves.spInserirMortalidade.Params.Add('P_ID_LOTE', ftInteger).AsInteger := Mort.IdLote;
-      dmLoteAves.spInserirMortalidade.Params.Add('P_DATA_MORTALIDADE', ftDate).AsDate := Mort.DataMortalidade;
-      dmLoteAves.spInserirMortalidade.Params.Add('P_QUANTIDADE_MORTA', ftInteger).AsInteger := Mort.QuantidadeMorta;
-      dmLoteAves.spInserirMortalidade.Params.Add('P_OBSERVACAO', ftString).AsString := Mort.Observacao;
+      dmLoteAves.spInserirMortalidade.ParamByName('P_ID_LOTE').AsInteger := Mort.IdLote;
+      dmLoteAves.spInserirMortalidade.ParamByName('P_DATA_MORTALIDADE').AsDate := Mort.DataMortalidade;
+      dmLoteAves.spInserirMortalidade.ParamByName('P_QUANTIDADE_MORTA').AsInteger := Mort.QuantidadeMorta;
+      dmLoteAves.spInserirMortalidade.ParamByName('P_OBSERVACAO').AsString := Mort.Observacao;
 
-      dmLoteAves.spInserirMortalidade.ExecProc;
+      dmLoteAves.spInserirMortalidade.Open;
+      Perc := dmLoteAves.spInserirMortalidade.FieldByName('P_PERCENTUAL').AsFloat;
+      dmLoteAves.spInserirMortalidade.Close;
     finally
       Mort.Free;
     end;
 
-    dmLoteAves.qryMortalidade.Close;
-    dmLoteAves.qryMortalidade.Open;
+    if FIdLote > 0 then
+      CarregarGridMortalidade(FIdLote)
+    else
+    begin
+      dmLoteAves.qryMortalidade.Close;
+      dmLoteAves.qryMortalidade.Open;
+    end;
 
-    Perc := CalcularPercentualMortalidadeDoLote(FIdLote);
     AtualizarIndicadorSaude(Perc);
 
     MessageDlg('Mortalidade salva com sucesso!', mtInformation, [mbOK], 0);

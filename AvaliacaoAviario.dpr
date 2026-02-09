@@ -9,7 +9,9 @@ uses
   uMortalidade in 'src\forms\mortalidade\uMortalidade.pas' {frmMortalidade},
   uLoteAvesDomain in 'src\domain\uLoteAvesDomain.pas',
   uPesagemDomain in 'src\domain\uPesagemDomain.pas',
-  uMortalidadeDomain in 'src\domain\uMortalidadeDomain.pas';
+  uMortalidadeDomain in 'src\domain\uMortalidadeDomain.pas',
+  bib in 'bib\bib.pas',
+  uControleLotes in 'src\forms\loteaves\uControleLotes.pas' {frmControleLotes};
 
 {$R *.res}
 
@@ -21,5 +23,6 @@ begin
   Application.CreateForm(TfrmPesagem, frmPesagem);
   Application.CreateForm(TfrmLoteAves, frmLoteAves);
   Application.CreateForm(TfrmMortalidade, frmMortalidade);
+  Application.CreateForm(TfrmControleLotes, frmControleLotes);
   Application.Run;
 end.

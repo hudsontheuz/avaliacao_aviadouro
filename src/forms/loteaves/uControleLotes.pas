@@ -80,6 +80,7 @@ begin
     '  L.QUANTIDADE_INICIAL, ' + sLineBreak +
     '  COALESCE(P.TOTAL_PESADO, 0) AS TOTAL_PESADO, ' + sLineBreak +
     '  COALESCE(M.TOTAL_MORTO, 0) AS TOTAL_MORTO, ' + sLineBreak +
+    '  (L.QUANTIDADE_INICIAL - (COALESCE(P.TOTAL_PESADO, 0) + COALESCE(M.TOTAL_MORTO, 0))) AS RESTANTES, ' + sLineBreak +
     '  ROUND((COALESCE(M.TOTAL_MORTO, 0) * 100.0) / NULLIF(L.QUANTIDADE_INICIAL, 0), 2) AS PERCENTUAL_MORTALIDADE ' + sLineBreak +
     'FROM TAB_LOTE_AVES L ' + sLineBreak +
     'LEFT JOIN ( ' + sLineBreak +
@@ -94,6 +95,7 @@ begin
     ') M ON M.ID_LOTE_FK = L.ID_LOTE ' + sLineBreak +
     'WHERE L.ID_LOTE = :ID ' + sLineBreak +
     'ORDER BY L.ID_LOTE';
+
 end;
 
 procedure TfrmControleLotes.CarregarDadosDoLote(const AId: Integer);

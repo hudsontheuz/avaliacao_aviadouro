@@ -10,21 +10,21 @@ type
   private
     FIdLote: Integer;
     FDataPesagem: TDate;
-    FPesoMedio: Integer;
+    FPesoMedio: Double;
     FQuantidadePesada: Integer;
   public
-    constructor Create(AIdLote: Integer; AData: TDate; APesoMedio: Integer; AQtd: Integer);
+    constructor Create(AIdLote: Integer; AData: TDate; APesoMedio: Double; AQtd: Integer);
     procedure Validar;
 
     property IdLote: Integer read FIdLote;
     property DataPesagem: TDate read FDataPesagem;
-    property PesoMedio: Integer read FPesoMedio;
+    property PesoMedio: Double read FPesoMedio;
     property QuantidadePesada: Integer read FQuantidadePesada;
   end;
 
 implementation
 
-constructor TPesagem.Create(AIdLote: Integer; AData: TDate; APesoMedio: Integer; AQtd: Integer);
+constructor TPesagem.Create(AIdLote: Integer; AData: TDate; APesoMedio: Double; AQtd: Integer);
 begin
   FIdLote := AIdLote;
   FDataPesagem := AData;

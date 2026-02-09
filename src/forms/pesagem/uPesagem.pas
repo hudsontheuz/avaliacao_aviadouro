@@ -31,7 +31,8 @@ type
     FIdLote: Integer;
     procedure LimparCampos;
     function LerQuantidadePesada: Integer;
-    function LerPesoMedio: Integer;
+    function LerPesoMedio: Double;
+    procedure CarregarGridPesagem(const AIdLote: Integer);
   public
   end;
 
@@ -41,7 +42,7 @@ var
 implementation
 
 uses
-  uDmLoteAves, uPesagemDomain, FireDAC.Stan.Param;
+  uDmLoteAves, uPesagemDomain, bib, FireDAC.Stan.Param;
 
 {$R *.dfm}
 
@@ -63,6 +64,13 @@ begin
   lkpLote.KeyValue := Null;
 
   dmLoteAves.qryPesagem.Close;
+
+  LimparCampos;
+end;
+
+procedure TfrmPesagem.CarregarGridPesagem(const AIdLote: Integer);
+begin
+  dmLoteAves.qryPesagem.Close;
   dmLoteAves.qryPesagem.SQL.Text :=
     'SELECT ' +
     '  ID_PESAGEM, ' +
@@ -71,10 +79,10 @@ begin
     '  PESO_MEDIO, ' +
     '  QUANTIDADE_PESADA ' +
     'FROM TAB_PESAGEM ' +
-    'ORDER BY DATA_PESAGEM DESC';
+    'WHERE ID_LOTE_FK = :ID_LOTE ' +
+    'ORDER BY DATA_PESAGEM DESC, ID_PESAGEM DESC';
+  dmLoteAves.qryPesagem.ParamByName('ID_LOTE').AsInteger := AIdLote;
   dmLoteAves.qryPesagem.Open;
-
-  LimparCampos;
 end;
 
 procedure TfrmPesagem.LimparCampos;
@@ -88,9 +96,14 @@ end;
 procedure TfrmPesagem.lkpLoteClick(Sender: TObject);
 begin
   if VarIsNull(lkpLote.KeyValue) then
-    FIdLote := 0
-  else
-    FIdLote := VarAsType(lkpLote.KeyValue, varInteger);
+  begin
+    FIdLote := 0;
+    dmLoteAves.qryPesagem.Close;
+    Exit;
+  end;
+
+  FIdLote := VarAsType(lkpLote.KeyValue, varInteger);
+  CarregarGridPesagem(FIdLote);
 end;
 
 function TfrmPesagem.LerQuantidadePesada: Integer;
@@ -105,13 +118,24 @@ begin
     raise Exception.Create('QUANTIDADE_PESADA deve ser maior que zero.');
 end;
 
-function TfrmPesagem.LerPesoMedio: Integer;
+function TfrmPesagem.LerPesoMedio: Double;
+var
+  Texto: string;
+  Fs: TFormatSettings;
 begin
   if Trim(ED_PESOMEDIO.Text) = '' then
     raise Exception.Create('Informe o PESO_MEDIO.');
 
-  if not TryStrToInt(Trim(ED_PESOMEDIO.Text), Result) then
-    raise Exception.Create('PESO_MEDIO inválido (use inteiro).');
+  Texto := Trim(ED_PESOMEDIO.Text);
+  Fs := FormatSettings;
+
+  if not TryStrToFloat(Texto, Result, Fs) then
+  begin
+    Texto := StringReplace(Texto, ',', '.', [rfReplaceAll]);
+    Fs.DecimalSeparator := '.';
+    if not TryStrToFloat(Texto, Result, Fs) then
+      raise Exception.Create('PESO_MEDIO inválido.');
+  end;
 
   if Result <= 0 then
     raise Exception.Create('PESO_MEDIO deve ser maior que zero.');
@@ -120,12 +144,11 @@ end;
 procedure TfrmPesagem.btnSalvarPesagemClick(Sender: TObject);
 var
   Qtd: Integer;
-  Peso: Integer;
+  Peso: Double;
   Pesagem: TPesagem;
 begin
   try
-    if FIdLote <= 0 then
-      raise Exception.Create('Selecione um lote.');
+    bib.ValidarLoteSelecionado(FIdLote);
 
     Qtd := LerQuantidadePesada;
     Peso := LerPesoMedio;
@@ -135,18 +158,24 @@ begin
       Pesagem.Validar;
 
       dmLoteAves.spInserirPesagem.Close;
+      dmLoteAves.spInserirPesagem.Unprepare;
       dmLoteAves.spInserirPesagem.StoredProcName := 'PRCD_INSERIR_PESAGEM';
-      dmLoteAves.spInserirPesagem.Params.Clear;
+      dmLoteAves.spInserirPesagem.Prepare;
 
-      dmLoteAves.spInserirPesagem.Params.Add('P_ID_LOTE', ftInteger).AsInteger := Pesagem.IdLote;
-      dmLoteAves.spInserirPesagem.Params.Add('P_DATA_PESAGEM', ftDate).AsDate := Pesagem.DataPesagem;
-      dmLoteAves.spInserirPesagem.Params.Add('P_PESO_MEDIO', ftInteger).AsInteger := Pesagem.PesoMedio;
-      dmLoteAves.spInserirPesagem.Params.Add('P_QUANTIDADE_PESADA', ftInteger).AsInteger := Pesagem.QuantidadePesada;
+      dmLoteAves.spInserirPesagem.ParamByName('P_ID_LOTE').AsInteger := Pesagem.IdLote;
+      dmLoteAves.spInserirPesagem.ParamByName('P_DATA_PESAGEM').AsDate := Pesagem.DataPesagem;
+      dmLoteAves.spInserirPesagem.ParamByName('P_PESO_MEDIO').Value := Currency(Pesagem.PesoMedio);
+      dmLoteAves.spInserirPesagem.ParamByName('P_QUANTIDADE_PESADA').AsInteger := Pesagem.QuantidadePesada;
 
       dmLoteAves.spInserirPesagem.ExecProc;
 
-      dmLoteAves.qryPesagem.Close;
-      dmLoteAves.qryPesagem.Open;
+      if FIdLote > 0 then
+        CarregarGridPesagem(FIdLote)
+      else
+      begin
+        dmLoteAves.qryPesagem.Close;
+        dmLoteAves.qryPesagem.Open;
+      end;
 
       MessageDlg('Pesagem salva com sucesso!', mtInformation, [mbOK], 0);
       LimparCampos;
@@ -161,14 +190,12 @@ end;
 
 procedure TfrmPesagem.ED_QUANTIDADEPESADAKeyPress(Sender: TObject; var Key: Char);
 begin
-  if not CharInSet(Key, ['0'..'9', #8]) then
-    Key := #0;
+  bib.SomenteNumeros(Key);
 end;
 
 procedure TfrmPesagem.ED_PESOMEDIOKeyPress(Sender: TObject; var Key: Char);
 begin
-  if not CharInSet(Key, ['0'..'9', #8]) then
-    Key := #0;
+  bib.SomenteNumerosEVirgula(Key);
 end;
 
 end.

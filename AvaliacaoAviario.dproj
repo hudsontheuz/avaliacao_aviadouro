@@ -149,6 +149,11 @@
         <DCCReference Include="src\domain\uLoteAvesDomain.pas"/>
         <DCCReference Include="src\domain\uPesagemDomain.pas"/>
         <DCCReference Include="src\domain\uMortalidadeDomain.pas"/>
+        <DCCReference Include="bib\bib.pas"/>
+        <DCCReference Include="src\forms\loteaves\uControleLotes.pas">
+            <Form>frmControleLotes</Form>
+            <FormType>dfm</FormType>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
