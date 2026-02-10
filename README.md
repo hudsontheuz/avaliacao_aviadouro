@@ -186,37 +186,6 @@ Essa organização visa:
 Desenvolvido como avaliação técnica simulando um sistema de gestão avícola.
 
 
-## 🧩 Exemplo prático aplicando DDD + Clean Architecture
-
-Abaixo está um exemplo de separação por camadas usando o cenário de **registro de mortalidade**:
-
-- **Domain (entidades + regras de negócio):**
-  - `TMortalidade` valida os dados de entrada (`Validar`).
-  - `TLoteAves` calcula percentual de mortalidade (`CalcularPercentualMortalidade`).
-- **Application (caso de uso):**
-  - `TRegistrarMortalidadeUseCase` orquestra a regra de negócio sem depender de FireDAC ou VCL.
-- **Infra (detalhes externos):**
-  - `TLoteAvesRepositoryFD` implementa a interface do repositório usando FireDAC/Stored Procedure.
-
-Fluxo resumido:
-
-1. A tela (Form) coleta os dados e chama o **Use Case**.
-2. O **Use Case** valida entidades de domínio e calcula o percentual.
-3. O **Use Case** usa a abstração `ILoteAvesRepository` para persistir.
-4. A implementação concreta no **Infra** executa SQL/SP no Firebird.
-
-Estrutura de exemplo criada:
-
-- `src/domain/uLoteAvesRepository.pas` (porta de saída / interface)
-- `src/application/uRegistrarMortalidadeUseCase.pas` (caso de uso)
-- `src/infra/uLoteAvesRepositoryFD.pas` (adaptador FireDAC)
-
-Esse formato facilita testes, manutenção e evolução, pois as regras centrais ficam protegidas de mudanças em UI e banco.
-
----
-
-
-
 ## ✅ Exemplo mais próximo de DDD + Clean Architecture (estrutura sugerida)
 
 Foi adicionada uma estrutura de referência em `src/` seguindo o modelo solicitado:
