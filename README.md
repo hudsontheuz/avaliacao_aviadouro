@@ -244,4 +244,6 @@ src/
 
 Assim, as regras centrais permanecem isoladas de detalhes de UI e banco.
 
+> Observação: esta estrutura é um **exemplo arquitetural** e pode ser integrada gradualmente às units já existentes do projeto VCL.
+
 ---
