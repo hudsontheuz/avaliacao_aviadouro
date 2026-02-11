@@ -13,12 +13,73 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: compile-project
+      # Debug básico do ambiente / pasta
+      - name: Debug - workspace info
         shell: powershell
-        run: .\compilador.bat
+        run: |
+          Write-Host "GITHUB_WORKSPACE: $env:GITHUB_WORKSPACE"
+          Write-Host "PWD:"
+          Get-Location
+          Write-Host "Top level files/folders:"
+          Get-ChildItem -Path $env:GITHUB_WORKSPACE | Format-Table -AutoSize
 
-      - name: execute-test
+      # Compila
+      - name: Compile project
         shell: powershell
-        run: .\bin\AvaliacaoAviarioTests\AvaliacaoAviarioTests.exe
+        run: |
+          Write-Host "Rodando compilador.bat..."
+          & "$env:GITHUB_WORKSPACE\compilador.bat"
+
+      # Descobre onde o EXE foi parar (lista todos, e também filtra pelo nome)
+      - name: Debug - find EXEs (all)
+        shell: powershell
+        run: |
+          Write-Host "=== Procurando TODOS os .exe dentro do workspace ==="
+          $all = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "*.exe" -ErrorAction SilentlyContinue
+          if (-not $all) {
+            Write-Host "Nenhum .exe encontrado no workspace."
+          } else {
+            $all | Select-Object FullName, Length, LastWriteTime | Sort-Object LastWriteTime -Descending | Format-Table -AutoSize
+          }
+
+      - name: Debug - find AvaliacaoAviario* EXEs
+        shell: powershell
+        run: |
+          Write-Host "=== Procurando EXEs com nome AvaliacaoAviario* ==="
+          $hits = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Filter "AvaliacaoAviario*.exe" -ErrorAction SilentlyContinue
+          if (-not $hits) {
+            Write-Host "Nenhum AvaliacaoAviario*.exe encontrado."
+          } else {
+            $hits | Select-Object FullName, Length, LastWriteTime | Sort-Object LastWriteTime -Descending | Format-Table -AutoSize
+          }
+
+      # (Opcional) imprime as pastas padrão do Delphi caso você compile Win32/Win64
+      - name: Debug - likely Delphi output folders
+        shell: powershell
+        run: |
+          Write-Host "=== Pastas comuns de output (Win32/Win64 Debug/Release) ==="
+          $patterns = @(
+            "*\Win32\Debug",
+            "*\Win32\Release",
+            "*\Win64\Debug",
+            "*\Win64\Release"
+          )
+          foreach ($p in $patterns) {
+            $dirs = Get-ChildItem -Path $env:GITHUB_WORKSPACE -Recurse -Directory -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -like (Join-Path $env:GITHUB_WORKSPACE $p) }
+            foreach ($d in $dirs) {
+              Write-Host "-> $($d.FullName)"
+              Get-ChildItem -Path $d.FullName -Filter "*.exe" -ErrorAction SilentlyContinue |
+                Select-Object FullName, LastWriteTime | Format-Table -AutoSize
+            }
+          }
+
+      # Executa o teste (mantém como estava; você vai trocar o caminho depois que achar o exe)
+      - name: Execute test (current path)
+        shell: powershell
+        run: |
+          Write-Host "Tentando executar: $env:GITHUB_WORKSPACE\bin\AvaliacaoAviarioTests.exe"
+          & "$env:GITHUB_WORKSPACE\bin\AvaliacaoAviarioTests.exe"
