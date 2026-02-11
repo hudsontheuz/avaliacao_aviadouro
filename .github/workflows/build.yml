@@ -21,4 +21,4 @@ jobs:
 
       - name: execute-test
         shell: powershell
-        run: tests\AvaliacaoAviarioTests\Win64\Debug\AvaliacaoAviarioTests.exe
+        run: .\bin\AvaliacaoAviarioTests\AvaliacaoAviarioTests.exe
