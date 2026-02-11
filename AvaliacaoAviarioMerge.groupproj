@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{EE39C3F9-7026-4981-A07B-36F8068DFB1E}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="AvaliacaoAviario.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="tests\AvaliacaoAviarioTests\AvaliacaoAviarioTests.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="AvaliacaoAviario">
+        <MSBuild Projects="AvaliacaoAviario.dproj"/>
+    </Target>
+    <Target Name="AvaliacaoAviario:Clean">
+        <MSBuild Projects="AvaliacaoAviario.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="AvaliacaoAviario:Make">
+        <MSBuild Projects="AvaliacaoAviario.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="AvaliacaoAviarioTests">
+        <MSBuild Projects="tests\AvaliacaoAviarioTests\AvaliacaoAviarioTests.dproj"/>
+    </Target>
+    <Target Name="AvaliacaoAviarioTests:Clean">
+        <MSBuild Projects="tests\AvaliacaoAviarioTests\AvaliacaoAviarioTests.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="AvaliacaoAviarioTests:Make">
+        <MSBuild Projects="tests\AvaliacaoAviarioTests\AvaliacaoAviarioTests.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="AvaliacaoAviario;AvaliacaoAviarioTests"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="AvaliacaoAviario:Clean;AvaliacaoAviarioTests:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="AvaliacaoAviario:Make;AvaliacaoAviarioTests:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
