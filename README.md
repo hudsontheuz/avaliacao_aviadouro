@@ -184,3 +184,30 @@ Essa organização visa:
 ---
 
 Desenvolvido como avaliação técnica simulando um sistema de gestão avícola.
+
+---
+
+# 🧱 Exemplo DDD + Clean Architecture
+
+Foi adicionado um exemplo de organização em camadas dentro de `src/` com separação explícita entre:
+
+- **Domain**: entidades, value objects, serviços e exceções de negócio.
+- **Application**: portas (interfaces), DTOs e casos de uso.
+- **Infrastructure**: implementação de persistência (FireDAC / Firebird).
+- **Presentation**: presenters/forms e composição de dependências.
+
+Estrutura criada:
+
+- `src/domain/entities` (`Lote`, `Pesagem`, `Mortalidade`)
+- `src/domain/valueobjects` (`Percentual`)
+- `src/domain/services` (`IndicadorSaudeService`)
+- `src/domain/exceptions` (`DomainException`)
+- `src/application/ports`
+- `src/application/usecases`
+- `src/application/dto`
+- `src/infrastructure/persistence`
+- `src/infrastructure/persistence/Repositories`
+- `src/presentation/forms`
+- `src/presentation/composition`
+
+> Observação: este bloco é um **exemplo de referência arquitetural** para evolução incremental do projeto atual.
